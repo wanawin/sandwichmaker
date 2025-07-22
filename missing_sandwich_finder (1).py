@@ -12,31 +12,27 @@ combinations that are 'sandwiched' between two others, differing by ±1 in the s
 user_input = st.text_area("Paste your combos here:", height=300)
 
 if user_input:
-    # Normalize input
     raw_lines = user_input.replace(',', '\n').split('\n')
     combo_list = [line.strip() for line in raw_lines if line.strip().isdigit() and len(line.strip()) == 5]
+    combo_set = set(combo_list)
 
     def find_missing_sandwich_combos(combo_list):
-        combo_set = set(combo_list)
         missing_centers = defaultdict(list)
+        for i in range(len(combo_list)):
+            for j in range(i + 1, len(combo_list)):
+                a, b = combo_list[i], combo_list[j]
+                diff_positions = [k for k in range(5) if a[k] != b[k]]
 
-        for a in combo_list:
-            for b in combo_list:
-                if a >= b:
-                    continue
-
-                diff = [(i, int(a[i]), int(b[i])) for i in range(5) if a[i] != b[i]]
-
-                if len(diff) == 1:
-                    i, da, db = diff[0]
-                    if abs(da - db) == 1:
-                        mid_digit = str((da + db) // 2)
+                if len(diff_positions) == 1:
+                    pos = diff_positions[0]
+                    da, db = int(a[pos]), int(b[pos])
+                    if abs(da - db) == 2:
+                        mid = str((da + db) // 2)
                         middle = list(a)
-                        middle[i] = mid_digit
+                        middle[pos] = mid
                         middle_combo = ''.join(middle)
                         if middle_combo not in combo_set:
                             missing_centers[middle_combo].append((a, b))
-
         return missing_centers
 
     results = find_missing_sandwich_combos(combo_list)
@@ -52,8 +48,6 @@ if user_input:
         st.markdown("### Copyable List of Missing Combos")
         st.text("\n".join(output_lines))
 
-        # Create downloadable file
-        missing_df = pd.DataFrame(output_lines, columns=["Missing Combo"])
         txt = "\n".join(output_lines)
         st.download_button("Download .txt", txt, file_name="missing_sandwich_combos.txt")
 
