@@ -18,21 +18,33 @@ if user_input:
 
     def find_missing_sandwich_combos(combo_list):
         missing_centers = defaultdict(list)
-        for i in range(len(combo_list)):
-            for j in range(i + 1, len(combo_list)):
-                a, b = combo_list[i], combo_list[j]
-                diff_positions = [k for k in range(5) if a[k] != b[k]]
+        for a in combo_list:
+            for b in combo_list:
+                if a == b:
+                    continue
 
+                diff_positions = [k for k in range(5) if a[k] != b[k]]
                 if len(diff_positions) == 1:
                     pos = diff_positions[0]
                     da, db = int(a[pos]), int(b[pos])
-                    if abs(da - db) == 2:
-                        mid = str((da + db) // 2)
-                        middle = list(a)
-                        middle[pos] = mid
-                        middle_combo = ''.join(middle)
-                        if middle_combo not in combo_set:
-                            missing_centers[middle_combo].append((a, b))
+                    if abs(da - db) == 1:
+                        # check in the same direction for the 3rd missing link
+                        forward_digit = str(max(da, db) + 1)
+                        if int(forward_digit) <= 9:
+                            forward = list(a)
+                            forward[pos] = forward_digit
+                            forward_combo = ''.join(forward)
+                            if forward_combo not in combo_set:
+                                missing_centers[forward_combo].append((a, b))
+
+                        backward_digit = str(min(da, db) - 1)
+                        if int(backward_digit) >= 0:
+                            backward = list(a)
+                            backward[pos] = backward_digit
+                            backward_combo = ''.join(backward)
+                            if backward_combo not in combo_set:
+                                missing_centers[backward_combo].append((a, b))
+
         return missing_centers
 
     results = find_missing_sandwich_combos(combo_list)
