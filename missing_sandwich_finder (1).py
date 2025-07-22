@@ -16,50 +16,32 @@ if user_input:
     combo_list = [line.strip() for line in raw_lines if line.strip().isdigit() and len(line.strip()) == 5]
     combo_set = set(combo_list)
 
-    def find_missing_targets(combo_list):
+    def find_missing_sandwich_centers(combo_list):
         missing_combos = defaultdict(list)
-        for combo in combo_list:
-            digits = list(combo)
-            for i in range(5):
-                d = int(digits[i])
-
-                # Check for sandwich trap: combo[i-1], combo[i+1] -> want center
-                for delta in [-2, 2]:
-                    neighbor_digits = digits.copy()
-                    neighbor_value = d + delta
-                    if 0 <= neighbor_value <= 9:
-                        neighbor_digits[i] = str(neighbor_value)
-                        neighbor_combo = ''.join(neighbor_digits)
-
-                        # middle value between current and neighbor
-                        middle_digit = str((d + neighbor_value) // 2)
-                        center_digits = digits.copy()
-                        center_digits[i] = middle_digit
-                        center_combo = ''.join(center_digits)
-
-                        if neighbor_combo in combo_set and center_combo not in combo_set:
-                            missing_combos[center_combo].append((combo, neighbor_combo))
-
-                # If combo is center, make sure ±1 neighbors are present
-                for offset in [-1, 1]:
-                    neighbor_digits = digits.copy()
-                    new_val = d + offset
-                    if 0 <= new_val <= 9:
-                        neighbor_digits[i] = str(new_val)
-                        neighbor_combo = ''.join(neighbor_digits)
-                        if neighbor_combo not in combo_set:
-                            missing_combos[neighbor_combo].append((combo,))
-
+        for a in combo_list:
+            for b in combo_list:
+                if a >= b:
+                    continue
+                diffs = [(i, int(a[i]), int(b[i])) for i in range(5) if a[i] != b[i]]
+                if len(diffs) == 1:
+                    i, da, db = diffs[0]
+                    if abs(da - db) == 2:
+                        mid_digit = str((da + db) // 2)
+                        middle = list(a)
+                        middle[i] = mid_digit
+                        middle_combo = ''.join(middle)
+                        if middle_combo not in combo_set:
+                            missing_combos[middle_combo].append((a, b))
         return missing_combos
 
-    results = find_missing_targets(combo_list)
+    results = find_missing_sandwich_centers(combo_list)
 
     if results:
         st.success(f"Found {len(results)} missing sandwich combos!")
         output_lines = []
         for missing, context in sorted(results.items()):
-            example = ' and '.join(context[0])
-            st.write(f"**{missing}** ← from {example}")
+            s1, s2 = context[0]
+            st.write(f"**{missing}** ← from {s1} and {s2}")
             output_lines.append(missing)
 
         st.markdown("### Copyable List of Missing Combos")
