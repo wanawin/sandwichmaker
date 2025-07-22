@@ -29,7 +29,7 @@ if user_input:
 
                 if len(diff) == 1:
                     i, da, db = diff[0]
-                    if abs(da - db) == 2:
+                    if abs(da - db) == 1:
                         mid_digit = str((da + db) // 2)
                         middle = list(a)
                         middle[i] = mid_digit
