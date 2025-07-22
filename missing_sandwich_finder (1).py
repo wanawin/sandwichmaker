@@ -6,7 +6,9 @@ st.title("Missing Sandwich Combo Finder")
 
 st.markdown("""
 Paste a list of 5-digit combos below (one per line or comma-separated). This app will find all missing
-combinations that are 'sandwiched' between two others, differing by ±1 in the same digit position.
+combinations that are 'sandwiched' between two others:
+- **Center traps**: where two combos differ by ±2 in one digit and the middle is missing.
+- **Forward traps**: where two consecutive steps exist and the next is missing.
 """)
 
 user_input = st.text_area("Paste your combos here:", height=300)
@@ -16,8 +18,8 @@ if user_input:
     combo_list = [line.strip() for line in raw_lines if line.strip().isdigit() and len(line.strip()) == 5]
     combo_set = set(combo_list)
 
-    def find_missing_sandwich_centers(combo_list):
-        missing_combos = defaultdict(list)
+    def find_center_traps(combo_list):
+        traps = defaultdict(list)
         for a in combo_list:
             for b in combo_list:
                 if a >= b:
@@ -31,24 +33,50 @@ if user_input:
                         middle[i] = mid_digit
                         middle_combo = ''.join(middle)
                         if middle_combo not in combo_set:
-                            missing_combos[middle_combo].append((a, b))
-        return missing_combos
+                            traps[middle_combo].append((a, b))
+        return traps
 
-    results = find_missing_sandwich_centers(combo_list)
+    def find_forward_traps(combo_list):
+        traps = defaultdict(list)
+        for combo in combo_list:
+            digits = list(combo)
+            for i in range(5):
+                d = int(digits[i])
+                if d <= 7:
+                    step1 = digits.copy()
+                    step2 = digits.copy()
+                    step1[i] = str(d + 1)
+                    step2[i] = str(d + 2)
+                    combo1 = ''.join(step1)
+                    combo2 = ''.join(step2)
+                    if combo1 in combo_set and combo2 not in combo_set:
+                        traps[combo2].append((combo, combo1))
+        return traps
 
-    if results:
-        st.success(f"Found {len(results)} missing sandwich combos!")
-        output_lines = []
-        for missing, context in sorted(results.items()):
-            s1, s2 = context[0]
+    center_results = find_center_traps(combo_list)
+    forward_results = find_forward_traps(combo_list)
+
+    total = len(center_results) + len(forward_results)
+    st.success(f"Found {total} missing sandwich combos! ({len(center_results)} center, {len(forward_results)} forward)")
+
+    if center_results:
+        st.markdown("### Center Traps")
+        for missing, sources in sorted(center_results.items()):
+            s1, s2 = sources[0]
             st.write(f"**{missing}** ← from {s1} and {s2}")
-            output_lines.append(missing)
 
-        st.markdown("### Copyable List of Missing Combos")
-        st.text("\n".join(output_lines))
+    if forward_results:
+        st.markdown("### Forward Traps")
+        for missing, sources in sorted(forward_results.items()):
+            s1, s2 = sources[0]
+            st.write(f"**{missing}** ← from {s1} and {s2}")
 
-        txt = "\n".join(output_lines)
+    all_missing = list(center_results.keys()) + list(forward_results.keys())
+    if all_missing:
+        st.markdown("### Copyable List of All Missing Combos")
+        st.text("\n".join(sorted(all_missing)))
+
+        txt = "\n".join(sorted(all_missing))
         st.download_button("Download .txt", txt, file_name="missing_sandwich_combos.txt")
-
     else:
         st.info("No missing sandwich combos found.")
