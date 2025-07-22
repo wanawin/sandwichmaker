@@ -9,6 +9,7 @@ Paste a list of 5-digit combos below (one per line or comma-separated). This app
 combinations that are 'sandwiched' between two others:
 - **Center traps**: where two combos differ by ±2 in one digit and the middle is missing.
 - **Forward traps**: where two consecutive steps exist and the next is missing.
+- **Backward traps**: where two consecutive steps exist and the prior is missing.
 """)
 
 user_input = st.text_area("Paste your combos here:", height=300)
@@ -53,11 +54,29 @@ if user_input:
                         traps[combo2].append((combo, combo1))
         return traps
 
+    def find_backward_traps(combo_list):
+        traps = defaultdict(list)
+        for combo in combo_list:
+            digits = list(combo)
+            for i in range(5):
+                d = int(digits[i])
+                if d >= 2:
+                    step1 = digits.copy()
+                    step2 = digits.copy()
+                    step1[i] = str(d - 1)
+                    step2[i] = str(d - 2)
+                    combo1 = ''.join(step1)
+                    combo2 = ''.join(step2)
+                    if combo1 in combo_set and combo2 not in combo_set:
+                        traps[combo2].append((combo1, combo))
+        return traps
+
     center_results = find_center_traps(combo_list)
     forward_results = find_forward_traps(combo_list)
+    backward_results = find_backward_traps(combo_list)
 
-    total = len(center_results) + len(forward_results)
-    st.success(f"Found {total} missing sandwich combos! ({len(center_results)} center, {len(forward_results)} forward)")
+    total = len(center_results) + len(forward_results) + len(backward_results)
+    st.success(f"Found {total} missing sandwich combos! ({len(center_results)} center, {len(forward_results)} forward, {len(backward_results)} backward)")
 
     if center_results:
         st.markdown("### Center Traps")
@@ -71,7 +90,13 @@ if user_input:
             s1, s2 = sources[0]
             st.write(f"**{missing}** ← from {s1} and {s2}")
 
-    all_missing = list(center_results.keys()) + list(forward_results.keys())
+    if backward_results:
+        st.markdown("### Backward Traps")
+        for missing, sources in sorted(backward_results.items()):
+            s1, s2 = sources[0]
+            st.write(f"**{missing}** ← from {s1} and {s2}")
+
+    all_missing = list(center_results.keys()) + list(forward_results.keys()) + list(backward_results.keys())
     if all_missing:
         st.markdown("### Copyable List of All Missing Combos")
         st.text("\n".join(sorted(all_missing)))
